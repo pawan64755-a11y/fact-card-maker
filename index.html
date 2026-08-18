@@ -148,7 +148,6 @@
     <input type="file" id="fileInput" accept="image/*" />
 
     <textarea id="factText" placeholder="Yahan apna fact / text likhein...">TEXT_HERE</textarea>
-    <div class="hint">🔴 Danger &nbsp; 🟡 Numbers/Quantity &nbsp; 🟣 Time/Age &nbsp; 🔵 Superlatives &nbsp; 🩷 Wonder/Unusual &nbsp; 🟢 Subject/Naam — sab apne aap color honge</div>
 
     <label class="small">Font Size <span id="fontSizeVal">44</span>px
       <input type="range" id="fontSize" min="20" max="90" value="44" />
@@ -275,32 +274,7 @@
   }
 
   function classifyWord(word, idx) {
-    const clean = stripPunct(word);
-    if (!clean) return COLORS.normal;
-    const lower = clean.toLowerCase();
-
-    // 1) numbers, percentages, measurements (highest priority - very distinctive)
-    if (/\d/.test(clean)) return COLORS.number;
-    if (UNIT_WORDS.has(lower)) return COLORS.number;
-
-    // 2) danger / threat words
-    if (DANGER_WORDS.has(lower)) return COLORS.danger;
-
-    // 3) time / age / era words
-    if (TIME_WORDS.has(lower)) return COLORS.time;
-
-    // 4) highlight words: curated list + "-est" superlative pattern
-    if (HIGHLIGHT_WORDS.has(lower) || isSuperlative(lower)) return COLORS.highlight;
-
-    // 5) wonder / surprising / unusual words
-    if (WONDER_WORDS.has(lower)) return COLORS.wonder;
-
-    // 6) quantity words (many, few, hundreds...)
-    if (QUANTITY_WORDS.has(lower)) return COLORS.number;
-
-    // 7) proper nouns (capitalized, not the first word) -> likely the fact's subject
-    if (idx > 0 && /^[A-Z][a-z]+$/.test(clean)) return COLORS.subject;
-
+    // Auto word-coloring disabled — all text is plain white now.
     return COLORS.normal;
   }
 
