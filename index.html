@@ -147,6 +147,10 @@
     </div>
     <input type="file" id="fileInput" accept="image/*" />
 
+    <div class="row">
+      <button id="shuffleBtn">🔀 Shuffle Text Colors</button>
+    </div>
+
     <textarea id="factText" placeholder="Yahan apna fact / text likhein...">TEXT_HERE</textarea>
 
     <label class="small">Font Size <span id="fontSizeVal">44</span>px
@@ -183,6 +187,7 @@
   const zoomVal = document.getElementById('zoomVal');
   const colorRow = document.getElementById('colorRow');
   const fileInput = document.getElementById('fileInput');
+  const shuffleBtn = document.getElementById('shuffleBtn');
 
   const SIZE = 1080;
 
@@ -196,8 +201,30 @@
     centerX: null,    // center point of the crop window, in source-image pixels
     centerY: null,
     cropW: null,      // last computed crop window size (used by drag handler for scaling)
-    cropH: null
+    cropH: null,
+    colorPalette: ['#FFD54F', '#FF5252', '#4FC3F7', '#66BB6A', '#FF6EC7', '#BA68C8']
+    // ^ current multi-color combination for colored words (cycled through in order, shuffle changes it)
   };
+
+  // ---- Shuffle: pool of vibrant colors to build fresh random combinations from ----
+  const ACCENT_POOL = [
+    '#FFD54F', '#FF5252', '#4FC3F7', '#66BB6A', '#FF6EC7',
+    '#BA68C8', '#FFA726', '#26C6DA', '#EF5350', '#7E57C2',
+    '#9CCC65', '#FFCA28', '#42A5F5', '#EC407A', '#26A69A',
+    '#FF7043', '#5C6BC0', '#D4E157', '#8D6E63', '#29B6F6'
+  ];
+  const COMBO_SIZE = 6; // how many distinct colors appear per combination
+
+  function randomCombo() {
+    const pool = [...ACCENT_POOL];
+    const combo = [];
+    for (let i = 0; i < COMBO_SIZE && pool.length; i++) {
+      const idx = Math.floor(Math.random() * pool.length);
+      combo.push(pool[idx]);
+      pool.splice(idx, 1);
+    }
+    return combo;
+  }
 
   // ---- Automatic focus-word coloring (advanced rule-based classifier) ----
   const COLORS = {
@@ -256,6 +283,17 @@
   ]);
 
   // words that end in "est" but are NOT superlatives (avoid false positives)
+  // Pronouns are never colored and never counted in the alternate white/color pattern
+  const PRONOUNS = new Set([
+    'i','you','he','she','it','we','they','me','him','her','us','them',
+    'my','your','his','her','its','our','their','mine','yours','hers','ours','theirs',
+    'myself','yourself','himself','herself','itself','ourselves','yourselves','themselves',
+    'who','whom','whose','which','what','whoever','whomever','whichever','whatever',
+    'anyone','anybody','anything','someone','somebody','something','no one','nobody','nothing',
+    'each','either','neither','one','another','other','others','few','many','several',
+    'all','both','some','any','none'
+  ]);
+
   const EST_EXCLUSIONS = new Set([
     'chest','forest','interest','request','protest','honest','modest','arrest',
     'quest','west','rest','test','best','vest','crest','wrest','conquest',
@@ -273,16 +311,29 @@
     return true;
   }
 
-  function classifyWord(word, idx) {
-    // Auto word-coloring disabled — all text is plain white now.
-    return COLORS.normal;
+  function isPronoun(word) {
+    const clean = stripPunct(word).toLowerCase();
+    return PRONOUNS.has(clean);
   }
 
   function buildTokens(text) {
-    return text.split(/\s+/).filter(Boolean).map((w, i) => ({
-      text: w,
-      color: classifyWord(w, i)
-    }));
+    let colorCounter = 0;   // only incremented for non-pronoun words (white/color pattern)
+    let paletteIndex = 0;   // only incremented when a word actually gets colored
+    return text.split(/\s+/).filter(Boolean).map((w) => {
+      if (isPronoun(w)) {
+        return { text: w, color: COLORS.normal };
+      }
+      // even count -> white, odd count -> next color from the palette
+      if (colorCounter % 2 === 0) {
+        colorCounter++;
+        return { text: w, color: COLORS.normal };
+      }
+      const palette = state.colorPalette;
+      const color = palette[paletteIndex % palette.length];
+      paletteIndex++;
+      colorCounter++;
+      return { text: w, color };
+    });
   }
 
   function wrapTokens(context, tokens, maxWidth) {
@@ -473,6 +524,11 @@
     document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
     sw.classList.add('selected');
     state.bgColor = sw.dataset.color;
+    drawCard();
+  });
+
+  shuffleBtn.addEventListener('click', () => {
+    state.colorPalette = randomCombo();
     drawCard();
   });
 
