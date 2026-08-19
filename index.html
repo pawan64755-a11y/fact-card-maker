@@ -391,6 +391,13 @@
       ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, targetW, targetH);
     }
 
+    // ---- Watermark: "Factlyx" top-right corner of the image area ----
+    ctx.font = '700 32px "Segoe UI", Roboto, -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(230,230,230,0.92)';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    ctx.fillText('Factlyx', SIZE - 40, 36);
+
     ctx.fillStyle = state.bgColor;
     ctx.fillRect(0, splitY, SIZE, SIZE - splitY);
 
